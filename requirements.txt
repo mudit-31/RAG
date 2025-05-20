@@ -1,8 +1,7 @@
-streamlit
-google-generativeai
-python-dotenv
-sentence-transformers
-PyPDF2
-docx2txt
-pymupdf
-faiss-cpu
+streamlit==1.45.1
+sentence-transformers==2.5.1
+numpy==1.26.4
+pymupdf==1.23.14
+faiss-cpu==1.7.4
+google-generativeai==0.3.2
+python-dotenv==1.0.1
