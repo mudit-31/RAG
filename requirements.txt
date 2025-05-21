@@ -1,7 +1,0 @@
-streamlit
-sentence-transformers
-pymupdf==1.21.1
-numpy
-chromadb
-google-generativeai
-python-dotenv
