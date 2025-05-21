@@ -1,8 +1,7 @@
-streamlit==1.45.1
-sentence-transformers==2.5.1
-numpy==1.26.4
-pymupdf==1.23.14
-google-generativeai==0.3.2
-python-dotenv==1.0.1
+streamlit
+sentence-transformers
+pymupdf==1.21.1
+numpy
 chromadb
-
+google-generativeai
+python-dotenv
