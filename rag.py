@@ -1,5 +1,5 @@
 import streamlit as st
-from pymupdf import fitz  
+import fitz  
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import google.generativeai as genai
