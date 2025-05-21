@@ -1,18 +1,16 @@
 import streamlit as st
-import fitz  
+import fitz  # PyMuPDF
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-import chromadb
-client = chromadb.Client()
-collection = client.get_or_create_collection(name="rag-collection")
-st.write("Hellewwww")
 
+# Load environment variable
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
+# Extract text from uploaded file
 def extract(file):
     if file.type == 'application/pdf':
         text = ""
@@ -25,6 +23,7 @@ def extract(file):
     else:
         return ""
 
+# Split text into overlapping chunks
 def chunkzation(text, chunk_size=500, overlap=100):
     chunkz = []
     start = 0
@@ -34,7 +33,14 @@ def chunkzation(text, chunk_size=500, overlap=100):
         start += chunk_size - overlap
     return chunkz
 
-st.title("RAG using Sentence Transformers + ChromaDB + Gemini")
+# Cosine similarity
+def cosine_similarity(a, b):
+    a = a / np.linalg.norm(a)
+    b = b / np.linalg.norm(b)
+    return np.dot(a, b)
+
+# Streamlit App
+st.title("RAG using Sentence Transformers + Gemini (No Chroma)")
 
 uploaded = st.file_uploader("Upload a file (pdf/txt):", type=["pdf", "txt"])
 
@@ -49,31 +55,20 @@ if uploaded:
     chunks = chunkzation(raw_text)
     st.write(f"Number of chunks: {len(chunks)}")
 
+    # Generate embeddings
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(chunks, show_progress_bar=True)
 
-    client = chromadb.Client()
-    collection = client.get_or_create_collection(name="rag-collection")
-
-    for i, chunk in enumerate(chunks):
-        collection.add(
-            documents=[chunk],
-            embeddings=[embeddings[i].tolist()],
-            ids=[str(i)]
-        )
-
     query = st.text_input("Enter your question:")
     if query:
-        query_embedding = model.encode([query])[0].tolist()
+        query_embedding = model.encode([query])[0]
 
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=5
-        )
+        # Compute cosine similarity
+        similarities = [cosine_similarity(query_embedding, emb) for emb in embeddings]
+        top_k = np.argsort(similarities)[-5:][::-1]  # Top 5 most similar chunks
 
-        relevant_chunks = results['documents'][0]
+        relevant_chunks = [chunks[i] for i in top_k]
         context = "\n".join(relevant_chunks)
-
 
         prompt = f"""
 You are a helpful assistant. Answer the following question based only on the provided context. 
@@ -96,4 +91,4 @@ Answer:
             st.markdown("### Answer")
             st.write(response.text)
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Gemini API failed: {e}")
