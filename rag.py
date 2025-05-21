@@ -6,6 +6,8 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 import chromadb
+client = chromadb.Client()
+collection = client.get_or_create_collection(name="rag-collection")
 st.write("Hellewwww")
 
 load_dotenv()
