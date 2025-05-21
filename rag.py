@@ -6,6 +6,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 import chromadb
+st.write("Hellewwww")
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
