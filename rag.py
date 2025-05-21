@@ -1,5 +1,5 @@
 import streamlit as st
-import fitz  # from PyMuPDF
+import fitz  
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import google.generativeai as genai
@@ -7,11 +7,9 @@ from dotenv import load_dotenv
 import os
 import chromadb
 
-# Load environment variable
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
-# Text extraction
 def extract(file):
     if file.type == 'application/pdf':
         text = ""
@@ -24,7 +22,6 @@ def extract(file):
     else:
         return ""
 
-# Chunking
 def chunkzation(text, chunk_size=500, overlap=100):
     chunkz = []
     start = 0
@@ -34,7 +31,6 @@ def chunkzation(text, chunk_size=500, overlap=100):
         start += chunk_size - overlap
     return chunkz
 
-# Streamlit UI
 st.title("RAG using Sentence Transformers + ChromaDB + Gemini")
 
 uploaded = st.file_uploader("Upload a file (pdf/txt):", type=["pdf", "txt"])
@@ -50,15 +46,12 @@ if uploaded:
     chunks = chunkzation(raw_text)
     st.write(f"Number of chunks: {len(chunks)}")
 
-    # Embedding
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(chunks, show_progress_bar=True)
 
-    # ChromaDB setup
     client = chromadb.Client()
-    collection = client.create_collection(name="rag-collection")
+    collection = client.get_or_create_collection(name="rag-collection")
 
-    # Add documents to collection
     for i, chunk in enumerate(chunks):
         collection.add(
             documents=[chunk],
@@ -66,7 +59,6 @@ if uploaded:
             ids=[str(i)]
         )
 
-    # User query input
     query = st.text_input("Enter your question:")
     if query:
         query_embedding = model.encode([query])[0].tolist()
@@ -79,7 +71,7 @@ if uploaded:
         relevant_chunks = results['documents'][0]
         context = "\n".join(relevant_chunks)
 
-        # Prompt
+
         prompt = f"""
 You are a helpful assistant. Answer the following question based only on the provided context. 
 If the answer is not in the context, say "I don't know."
