@@ -1,17 +1,17 @@
 import streamlit as st
-import fitz  
+import fitz  # from PyMuPDF
 from sentence_transformers import SentenceTransformer
 import numpy as np
-import faiss
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+import chromadb
 
+# Load environment variable
 load_dotenv()
-
 api_key = os.getenv("GOOGLE_API_KEY")
 
-
+# Text extraction
 def extract(file):
     if file.type == 'application/pdf':
         text = ""
@@ -24,6 +24,7 @@ def extract(file):
     else:
         return ""
 
+# Chunking
 def chunkzation(text, chunk_size=500, overlap=100):
     chunkz = []
     start = 0
@@ -33,10 +34,10 @@ def chunkzation(text, chunk_size=500, overlap=100):
         start += chunk_size - overlap
     return chunkz
 
+# Streamlit UI
+st.title("RAG using Sentence Transformers + ChromaDB + Gemini")
 
-st.title("RAG using Sentence Transformer + Gemini")
-
-uploaded = st.file_uploader("Upload a file (pdf/txt): ", type=["pdf", "txt"])
+uploaded = st.file_uploader("Upload a file (pdf/txt):", type=["pdf", "txt"])
 
 if uploaded:
     st.success(f"Uploaded: {uploaded.name}")
@@ -49,25 +50,36 @@ if uploaded:
     chunks = chunkzation(raw_text)
     st.write(f"Number of chunks: {len(chunks)}")
 
- 
+    # Embedding
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(chunks, show_progress_bar=True)
-    embedding_array = np.array(embeddings).astype("float32")
 
+    # ChromaDB setup
+    client = chromadb.Client()
+    collection = client.create_collection(name="rag-collection")
 
-    index = faiss.IndexFlatL2(embedding_array.shape[1])
-    index.add(embedding_array)
-    chunk_id_map = {i: chunk for i, chunk in enumerate(chunks)}
+    # Add documents to collection
+    for i, chunk in enumerate(chunks):
+        collection.add(
+            documents=[chunk],
+            embeddings=[embeddings[i].tolist()],
+            ids=[str(i)]
+        )
 
-
+    # User query input
     query = st.text_input("Enter your question:")
     if query:
-        query_embedding = model.encode([query])[0]
-        D, I = index.search(np.array([query_embedding]).astype("float32"), k=5)
-        relevant_chunks = [chunk_id_map[i] for i in I[0]]
+        query_embedding = model.encode([query])[0].tolist()
+
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=5
+        )
+
+        relevant_chunks = results['documents'][0]
         context = "\n".join(relevant_chunks)
 
-
+        # Prompt
         prompt = f"""
 You are a helpful assistant. Answer the following question based only on the provided context. 
 If the answer is not in the context, say "I don't know."
@@ -81,8 +93,7 @@ Question:
 Answer:
 """
 
-
-        genai.configure(api_key=api_key) 
+        genai.configure(api_key=api_key)
         gemini_model = genai.GenerativeModel("models/gemini-1.5-flash")
 
         try:
