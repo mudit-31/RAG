@@ -1,16 +1,16 @@
 import streamlit as st
-import fitz  # PyMuPDF
+import fitz 
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 
-# Load environment variable
+#loading the api key from the .env file
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
-# Extract text from uploaded file
+#Exxtraction of text for raw data
 def extract(file):
     if file.type == 'application/pdf':
         text = ""
@@ -23,7 +23,7 @@ def extract(file):
     else:
         return ""
 
-# Split text into overlapping chunks
+#chunking of text for efficient embedding
 def chunkzation(text, chunk_size=500, overlap=100):
     chunkz = []
     start = 0
@@ -40,7 +40,7 @@ def cosine_similarity(a, b):
     return np.dot(a, b)
 
 # Streamlit App
-st.title("RAG using Sentence Transformers + Gemini (No Chroma)")
+st.title("RAG using Sentence Transformers + Gemini(1.5-flash))")
 
 uploaded = st.file_uploader("Upload a file (pdf/txt):", type=["pdf", "txt"])
 
@@ -55,10 +55,10 @@ if uploaded:
     chunks = chunkzation(raw_text)
     st.write(f"Number of chunks: {len(chunks)}")
 
-    # Generate embeddings
+    #Embedding
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(chunks, show_progress_bar=True)
-
+    #query
     query = st.text_input("Enter your question:")
     if query:
         query_embedding = model.encode([query])[0]
