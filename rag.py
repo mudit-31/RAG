@@ -40,7 +40,7 @@ def cosine_similarity(a, b):
     return np.dot(a, b)
 
 # Streamlit App
-st.title("RAG using Sentence Transformers + Gemini(1.5-flash))")
+st.title("RAG using Sentence Transformers + Gemini")
 
 uploaded = st.file_uploader("Upload a file (pdf/txt):", type=["pdf", "txt"])
 
@@ -84,7 +84,7 @@ Answer:
 """
 
         genai.configure(api_key=api_key)
-        gemini_model = genai.GenerativeModel("models/gemini-1.5-flash")
+        gemini_model = genai.GenerativeModel("models/gemini-2.5-flash")
 
         try:
             response = gemini_model.generate_content(prompt)
